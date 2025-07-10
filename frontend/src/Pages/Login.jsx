@@ -1,5 +1,5 @@
 import { useState,useContext } from "react";
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../context/authContext";
 import axios from 'axios'
 
@@ -36,25 +36,25 @@ const Login =()=>{
 
     return(
         <div style={{maxWidth:400,margin:'50px auto', padding:20}}>
-            <h2>Login</h2>
+            <h2 style={{display:"flex", justifyContent:"center"}}>Login Window</h2>
             <form onSubmit={handlesubmit}>
                 <input type="email" 
                 placeholder="Enter Email"
                 value={email}
                 onChange={(e)=>setEmail(e.target.value)}
                 required
-                style={{width:'100%', padding:8,marginBottom:10}}
-                />
+                style={{width:'100%', padding:8,marginBottom:10}}   />
 
                 <input type="password"
                 placeholder="Enter Your Password" 
                 value={password}
                 onChange={(e)=>setPassword(e.target.value)}
                 required
-                style={{width:'100%', padding:8 , marginBottom:10}}
-                />
+                style={{width:'100%', padding:8 , marginBottom:10}}  />
 
                 <button type="submit" style={{width:'100%', padding:10}}>Login</button>
+
+                <Link to='/register' style={{width:'100%', padding:10, display:"flex", justifyContent:"center"}}>New User? Register here</Link>
             </form>
         </div>
 

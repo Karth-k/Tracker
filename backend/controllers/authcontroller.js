@@ -34,7 +34,7 @@ const registredUser = async (req,res)=>{
 
         //Setting up the JWT
         const token = jwt.sign(
-            {userID :newUser._id},
+            {id :newUser._id},
             process.env.JWT_SECRET,
             {expiresIn : '1d'}
         )
@@ -74,7 +74,7 @@ const loginUser = async(req,res)=>{
             }
 
             const token = jwt.sign(
-                {userID:user._id},
+                {id:user._id},
                 process.env.JWT_SECRET,
                 {expiresIn:'1d'}
 
