@@ -1,59 +1,90 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('../models/User');
+const crypto = require('crypto');
+const sendEmail = require('../Utils/sendEmail');
+
 // const User = require('../models/User');
 
 
-const registredUser = async (req,res)=>{
-    const{ name,email,password }= req.body;
 
-    //valiating the Input
-    try{
-        if(!name || !email || !password){
-            return res.status(400).json({message:"All fields are requried"})
-        }
+const registredUser = async (req, res) => {
+  const { name, email, password } = req.body;
 
-        //Checking if user already exists or not
-        const existingUser= await User.findOne({ email })
-
-        if(existingUser){
-            return res.status(400).json({message:"This email already exists!!"})
-        }
-
-
-        //Bcrytping the password
-        const salt = await bcrypt.genSalt(15);
-        const hashedPassword = await bcrypt.hash(password,salt)
-
-        const newUser= new User({
-            name,
-            email,
-            password:hashedPassword
-        });
-        await newUser.save();
-
-        //Setting up the JWT
-        const token = jwt.sign(
-            {id :newUser._id},
-            process.env.JWT_SECRET,
-            {expiresIn : '1d'}
-        )
-
-
-        res.status(201).json({
-            message:"User Regiestered Successfully",
-            user:{
-                id:newUser._id,
-                name:newUser.name,
-                email:newUser.email
-            },token
-        })
+  try {
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-    catch(err){
-        console.error("Register Error" ,err);
-        res.status(500).json({message:"Server Error Please try again!!"})
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "This email already exists!!" });
     }
-}
+
+    const salt = await bcrypt.genSalt(15);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const otpExpiry = Date.now() + 1 * 60 * 1000;
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      otp,
+      otpExpiry,
+      verified: false,
+    });
+
+    await newUser.save();
+
+    const message = `Your OTP for email verification is: ${otp}. It expires in 2 minutes.`;
+
+    await sendEmail(email, "Verify your email - OTP", message);
+
+    res.status(201).json({
+      message: "User registered successfully! Please check your email for the OTP to verify your account.",
+      userId: newUser._id
+    });
+  } catch (err) {
+    console.error("Register Error", err);
+    res.status(500).json({ message: "Server Error Please try again!!" });
+  }
+};
+
+const verifyOtp= async (req, res) => {
+  const { userId, otp } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.verified) {
+      return res.status(400).json({ message: 'User already verified' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    if (user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: 'OTP has expired' });
+    }
+
+    user.verified = true;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully. You can now log in.' });
+  } catch (err) {
+    console.error("OTP Verification Error", err);
+    res.status(500).json({ message: 'Server Error during OTP verification' });
+  }
+};
+
 
 const loginUser = async(req,res)=>{
     const{ email,password }= req.body
@@ -97,5 +128,5 @@ const loginUser = async(req,res)=>{
 }
 
 module.exports={
-    registredUser,loginUser
+    registredUser,loginUser,verifyOtp
 }

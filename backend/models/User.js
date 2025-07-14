@@ -10,7 +10,7 @@ const UserSchema= new mongoose.Schema({
         type:String,
         required:true,
         unique:true,
-        lowecase:true
+        lowercase:true
     },
     password:{
         type:String,
@@ -20,10 +20,22 @@ const UserSchema= new mongoose.Schema({
     group:{
         type:String,
         default:null,
+    },
+    verified:{
+        type:Boolean,
+        default:false
+    },
+    otp: {
+        type: String,
+        default: null
+    },
+    otpExpiry: {
+        type: Date,
+        default: null
     }
 },
     {
-        timestamp:true
+        timestamps:true
 })
 
 module.exports = mongoose.model('User', UserSchema);
